@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+SECRET=$(openssl rand -base64 32)
+echo -n "$SECRET" | gcloud secrets create greenerbeans-admin-api-key \
+    --replication-policy="automatic" \
+    --data-file=-

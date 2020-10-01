@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+SRC="$1"
+DST="$2"
+
+[[ -z "$SRC" ]] && echo "error: require source file" && echo "usage: ./copy-data-to-bucket myfile.txt gs://my-bucket" && exit 1
+[[ -z "$DST" ]] && echo "error: require destination bucket" && echo "usage: ./copy-data-to-bucket myfile.txt gs://my-bucket" && exit 1
+
+
+if ! echo "$DST" | grep -qE "^gs://.*$"; then
+  echo "error: invalid destination, please use bucket name e.g. gs://..." && exit 1
+fi
+
+
+echo "attempting to copy..."
+
+if ! gsutil cp $SRC $DST ; then
+  echo "copy failed" && exit 1
+fi
+
+echo "copy success"

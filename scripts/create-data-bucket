@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+help() {
+  echo '
+Usage: create-data-bucket --region europe-west2 --project myproject-dev --name my-bucket-name
+Create Cloud Storage Bucket
+
+      --help) show this menu
+      --region) region to deploy this bucket, use eu for multiregion europe bucket
+      --project) project to deploy this bucket
+      --name) name of bucket, must be globally unique
+'
+  exit 1
+}
+
+while [[ -n "$1" ]]; do
+  case "$1" in
+  --help) help ;;
+  --region)
+    REGION="$2"
+    shift
+    ;;
+  --project)
+    PROJECT_ID="$2"
+    shift
+    ;;
+    --name)
+    BUCKET_NAME="$2"
+    shift
+    ;;
+  *)
+    echo "error: invalid command $1" && exit 1
+    ;;
+  esac
+  shift
+done
+
+[[ -z "$REGION" ]] && echo "error: require REGION" && exit 1
+[[ -z "$PROJECT_ID" ]] && echo "error: require PROJECT_ID" && exit 1
+[[ -z "$BUCKET_NAME" ]] && echo "error: require BUCKET_NAME" && exit 1
+
+# use -l EU for multiregion
+gsutil mb -c standard -l europe-west2 -p "$PROJECT_ID" "gs://$BUCKET_NAME"

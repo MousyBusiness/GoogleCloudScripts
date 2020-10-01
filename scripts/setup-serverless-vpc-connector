@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# charged at approximately 1 f1-micro per 100Mbps throughput for the connector (minimum is 2)
+# plus any network charges
+
+NAME="serverless-vpc-connector"
+REGION="europe-west2"
+NETWORK="default"
+IP_RANGE="10.8.0.0/28"
+
+gcloud services enable vpcaccess.googleapis.com
+
+gcloud compute networks vpc-access connectors create $NAME \
+--network $NETWORK \
+--region $REGION \
+--range $IP_RANGE

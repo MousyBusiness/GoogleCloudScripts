@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+DESCRIPTION="greenerbeans dataset"
+REGION="europe-west2"
+
+while [[ -n "$1" ]]; do
+  case "$1" in
+  --project)
+    PROJECT_ID="$2"
+    shift
+    ;;
+  --name)
+    DATASET_NAME="$2"
+    shift
+    ;;
+  esac
+
+  shift
+done
+
+[[ -z "$PROJECT_ID" ]] && echo "error: require project id" && exit 1
+[[ -z "$DATASET_NAME" ]] && echo "error: require name" && exit 1
+
+if ! echo "$DATASET_NAME" | grep -qE "^[a-zA-Z0-9_]*$"; then
+  echo "error: invalid dataset name, can only use letters numbers and underscores" && exit 1
+fi
+
+bq --location=$REGION mk \
+  --default_partition_expiration 3600 \
+  --description "$DESCRIPTION" \
+  --dataset "$PROJECT_ID:$DATASET_NAME"

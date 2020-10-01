@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+
+help() {
+  echo '
+Usage: deploy -v [VERSION] --env [ENVIRONMENT]
+Deploy AppEngine services to Google Cloud
+
+      --help) show this menu
+      --version) set the deployment version e.g. v0.0.1
+      --env) set deployment environment dev|prod
+      --promote) immediately promote version to live
+      --dry) dry run to view commands
+      --admin-only) deploy admin only
+      --customer-only) customer only
+
+Example: deploy -v v0.0.1 --env dev --promote --dry'
+  exit 1
+}
+
+while [[ -n "$1" ]]; do
+  case "$1" in
+  --help) help ;;
+  --version)
+    VERSION="$2"
+    shift
+    ;;
+  --env)
+    ENVIRONMENT="$2"
+    shift
+    ;;
+  --promote)
+    PROMOTE=true
+    ;;
+  --dry)
+    DRY_RUN=true
+    ;;
+  --admin-only)
+    ADMIN_ONLY=true
+    ;;
+  --customer-only)
+    CUSTOMER_ONLY=true
+    ;;
+  *)
+    echo "error: invalid command $1" && exit 1
+    ;;
+  esac
+  shift
+done
+
+[[ -z "$VERSION" ]] && echo "error: version required" && exit 1
+[[ -z "$ENVIRONMENT" ]] && echo "error: env required" && exit 1
+
+if ! $(echo "$VERSION" | grep -qE "^v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$"); then
+  echo "error: invalid version provided, use syntax v0.0.1"
+  exit 1
+else
+  VERSION=$(echo "$VERSION" | sed 's/\./-/g')
+  echo "version updated $VERSION"
+fi
+
+DIR=$(dirname "$0")
+SVC_PATH="$DIR/../services"
+
+case "$ENVIRONMENT" in
+dev)
+  PROJECT="greenerbeans-api-dev"
+  ;;
+prod)
+  # canary rollouts using AppEngine splitting is the preferred rollout strategy for production
+  if [[ "$PROMOTE" == true ]]; then
+    echo -n "warning! promoting in production will immediately rollout new version, are you sure (y/n)? "
+    read yn
+    if [[ "$yn" != "y" ]]; then
+      echo "good choice, exiting..."
+      exit 1
+    fi
+  fi
+  echo "NOT IMPLEMENTED" && exit 1
+  ;;
+*) echo "error: environment not supported" && exit 1 ;;
+esac
+
+[[ -z "$PROJECT" ]] && echo "error: project not defined" && exit 1
+
+echo "using project $PROJECT for deploy"
+
+echo "DRY_RUN=$DRY_RUN"
+echo "PROMOTE=$PROMOTE"
+
+echo "------=deploying customer API=------"
+# build customer command
+customer_command="gcloud app deploy $SVC_PATH/customer --quiet --version $VERSION --project $PROJECT --appyaml=$SVC_PATH/customer/app.customer.yaml"
+# determine promote
+[[ "$PROMOTE" == "true" ]] && customer_command="$customer_command --promote" || customer_command="$customer_command --no-promote"
+
+if [[ "$DRY_RUN" == "true" ]] || [[ "$ADMIN_ONLY" == "true" ]]; then
+  # dry run
+  echo "dry run customer: $customer_command"
+else
+  # do deploy
+  (cd "$SVC_PATH/customer" && go mod vendor) # navigate and vendor
+  if ! $(eval $customer_command); then
+    echo "error: failed to deploy customer API"
+    exit 1
+  fi
+
+  # deploy dispatch.yaml to utilize DNS for admin APIs
+  gcloud app deploy $SVC_PATH/customer/dispatch.yaml --quiet --project $PROJECT
+
+fi
+
+echo
+echo "------=deploying admin API=------"
+# build admin command
+admin_command="gcloud app deploy $SVC_PATH/admin --quiet --version $VERSION --project $PROJECT --appyaml=$SVC_PATH/admin/app.admin.yaml"
+# determine promote
+[[ "$PROMOTE" == "true" ]] && admin_command="$admin_command --promote" || admin_command="$admin_command --no-promote"
+
+if [[ "$DRY_RUN" == "true" ]] || [[ "$CUSTOMER_ONLY" == "true" ]]; then
+  # dry run
+  echo "dry run admin: $admin_command"
+else
+  # do deploy
+  (cd "$SVC_PATH/admin" && go mod vendor) # navigate and vendor
+  if ! $(eval $admin_command); then
+    echo "error: failed to deploy admin API"
+    exit 1
+  fi
+
+  # deploy cron
+  gcloud app deploy $SVC_PATH/admin/cron.yaml --quiet --project $PROJECT
+fi

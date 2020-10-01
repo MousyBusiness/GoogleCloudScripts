@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+help() {
+  echo '
+Usage: deploy -v [VERSION] --env [ENVIRONMENT]
+Deploy AppEngine services to Google Cloud
+
+      --help) show this menu
+      --project) set the project of BigQuery
+      --table) set table to load data into [project.dataset.table]
+      --source) source file, can be in google storage or local
+
+'
+  exit 1
+}
+
+while [[ -n "$1" ]]; do
+  case "$1" in
+  --help) help ;;
+  --table)
+    TABLE="$2"
+    shift
+    ;;
+  --source)
+    SRC="$2"
+    shift
+    ;;
+  --project)
+    PROJECT="$2"
+    shift
+    ;;
+  *)
+    echo "error: invalid command $1" && exit 1
+    ;;
+  esac
+  shift
+done
+
+[[ -z "$SRC" ]] && echo "error: require SRC" && exit 1
+[[ -z "$TABLE" ]] && echo "error: require TABLE" && exit 1
+[[ -z "$PROJECT" ]] && echo "error: require PROJECT" && exit 1
+
+echo "TABLE: $TABLE"
+echo "SRC: $SRC"
+echo "PROJECT: $PROJECT"
+
+if ! echo "$TABLE" | grep -qE "^.*\\..*$"; then
+  echo "error: invalid table name, use dataset.table format" && exit 1
+fi
+
+echo "trying to load"
+bq --project_id "$PROJECT" load --source_format=CSV --autodetect "$TABLE" "$SRC"

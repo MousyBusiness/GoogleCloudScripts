@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+NAME="$1"
+REGION="$2"
+
+[[ -z "$NAME" ]] && echo "error: require NAME" && echo "usage: create-redis-instance NAME REGION" exit 1
+[[ -z "$REGION" ]] && echo "error: require REGION" && echo "usage: create-redis-instance NAME REGION" && exit 1
+
+gcloud redis instances create $NAME --size=1 --region=$REGION \
+    --redis-version=redis_5_0
+
+gcloud redis instances describe $NAME --region=$REGION
