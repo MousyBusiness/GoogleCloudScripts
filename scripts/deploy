@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+DEFAULT_PROJECT=""
+
 help() {
   echo '
 Usage: deploy -v [VERSION] --env [ENVIRONMENT]
@@ -63,7 +65,7 @@ SVC_PATH="$DIR/../services"
 
 case "$ENVIRONMENT" in
 dev)
-  PROJECT="greenerbeans-api-dev"
+  PROJECT=$DEFAULT_PROJECT
   ;;
 prod)
   # canary rollouts using AppEngine splitting is the preferred rollout strategy for production
