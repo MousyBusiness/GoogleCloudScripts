@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+gcloud beta deployment-manager type-providers create dataflow --api-options-file=options.yaml --descriptor-url="https://dataflow.googleapis.com/\$discovery/rest?version=v1b3"

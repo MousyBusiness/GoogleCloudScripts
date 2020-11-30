@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+DEPLOYMENT="iot-ingestion"
+DIR=$(dirname $0)
+
+# check if type provider exists
+if ! gcloud beta deployment-manager type-providers describe dataflow &>/dev/null; then
+  echo "type provider doesn't exist, creating..."
+  # create dataflow type provider and check for error
+  if ! $DIR/create-type-provider &>/dev/null; then
+    echo "error: failed to create dataflow type-provider" && exit 1
+  fi
+else
+  echo "type provider already exists"
+fi
+
+# check if deployment exists or not
+if ! gcloud deployment-manager deployments describe $DEPLOYMENT &>/dev/null; then
+  # deployment doesnt exist, create new
+  echo "creating new deployment '$DEPLOYMENT'"
+  gcloud deployment-manager deployments create $DEPLOYMENT --config iot-ingestion.yaml
+else
+  # deployment already exists, update
+  echo "updating $DEPLOYMENT"
+  gcloud deployment-manager deployments update $DEPLOYMENT --config iot-ingestion.yaml
+fi
