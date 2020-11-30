@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+PROJECT_ID=$1
+
+[[ -z "$PROJECT_ID" ]] && echo "error: require project id" && exit 1
+
+if ! gcloud projects list | awk '{ print $1 }' | grep -Eq "^${PROJECT_ID}$"; then
+  echo "error: invalid project id" && exit 1
+fi
+
+SERVICES='compute.googleapis.com               Compute Engine API
+dataflow.googleapis.com              Dataflow API
+deploymentmanager.googleapis.com     Cloud Deployment Manager V2 API
+oslogin.googleapis.com               Cloud OS Login API
+pubsub.googleapis.com                Cloud Pub/Sub API
+storage.googleapis.com               Cloud Storage API'
+
+echo "enabling services for $PROJECT_ID"
+gcloud services --project $PROJECT_ID enable $(echo "$SERVICES" | awk '{ print $1 }') --async
