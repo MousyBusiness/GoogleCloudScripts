@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
+PROJECT_ID=$1
+[[ -z "$PROJECT_ID" ]] && echo "error: require new project ID" && exit 1
+
 DEPLOYMENT="iot-ingestion"
 DIR=$(dirname $0)
 
 # check if type provider exists
-if ! gcloud beta deployment-manager type-providers describe dataflow &>/dev/null; then
+if ! gcloud beta deployment-manager --project $PROJECT_ID type-providers describe dataflow &>/dev/null; then
   echo "type provider doesn't exist, creating..."
   # create dataflow type provider and check for error
-  if ! $DIR/create-type-provider &>/dev/null; then
+  if ! $DIR/create-type-provider $PROJECT_ID &>/dev/null; then
     echo "error: failed to create dataflow type-provider" && exit 1
   fi
 else
@@ -15,12 +18,12 @@ else
 fi
 
 # check if deployment exists or not
-if ! gcloud deployment-manager deployments describe $DEPLOYMENT &>/dev/null; then
+if ! gcloud deployment-manager --project $PROJECT_ID deployments describe $DEPLOYMENT &>/dev/null; then
   # deployment doesnt exist, create new
   echo "creating new deployment '$DEPLOYMENT'"
-  gcloud deployment-manager deployments create $DEPLOYMENT --config iot-ingestion.yaml
+  gcloud deployment-manager --project $PROJECT_ID deployments create $DEPLOYMENT --config iot-ingestion.yaml
 else
   # deployment already exists, update
   echo "updating $DEPLOYMENT"
-  gcloud deployment-manager deployments update $DEPLOYMENT --config iot-ingestion.yaml
+  gcloud deployment-manager --project $PROJECT_ID deployments update $DEPLOYMENT --config iot-ingestion.yaml
 fi
