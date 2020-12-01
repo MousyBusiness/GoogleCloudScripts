@@ -1,4 +1,4 @@
-"""Creates the Cloud Storage buckets for iot-ingestion."""
+"""Creates the Cloud Storage bucket for iot-ingestion."""
 
 
 def GenerateConfig(context):
