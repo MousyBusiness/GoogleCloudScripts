@@ -43,8 +43,8 @@ OLD_VERSION=$(gcloud app versions list | awk '{ print $2 }' | sort -k1.5n | head
 if [[ -z "$VERSION" ]] ; then
   PREFIX=$(echo "$OLD_VERSION" | sed 's/^\(.*-.*-\)\(.*\)$/\1/')
   LATEST=$(echo "$OLD_VERSION" | sed 's/^\(.*-.*-\)\(.*\)$/\2/')
-  INCREMENTED=$(expr $(($LATEST + 1)))
-  VERSION=$(echo "${PREFIX}${INCREMENTED}" | sed 's/-/\./g')
+
+
 fi
 [[ -z "$PROJECT" ]] && echo "warning: project using gcloud default"
 
