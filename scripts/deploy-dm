@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+help() {
+  echo '
+  Usage: ./deploy-dm --project myproject --name server-farm --config ../resources/deployment.yaml
+
+  --project         ID of the project to deploy to
+  --name            Name of deployment
+  --config          Deployment manager configuration
+  --help            Show help
+  '
+  exit 1
+}
+
+while [[ -n "$1" ]]; do
+  case "$1" in
+  --help)
+    help
+    ;;
+  --project)
+    PROJECT_ID="$2"
+    shift
+    ;;
+  --name)
+    NAME="$2"
+    shift
+    ;;
+  --config)
+    CONFIG="$2"
+    shift
+    ;;
+  --delete)
+    DELETE=true
+    ;;
+  esac
+  shift
+done
+
+[[ -z "$PROJECT_ID" ]] && echo "require --project" && exit 1
+[[ -z "$NAME" ]] && echo "require --name" && exit 1
+
+if [[ "$DELETE" == "true" ]]; then
+  if ! gcloud deployment-manager deployments delete webscraper --quiet; then
+    echo "failed to delete deployment"
+    exit 1
+  fi
+  echo "successfully deleted"
+  exit 0
+fi
+
+[[ -z "$CONFIG" ]] && echo "require --config" && exit 1
+
+# check if deployment exists or not
+if ! gcloud deployment-manager --project $PROJECT_ID deployments describe $NAME &>/dev/null; then
+  # deployment doesnt exist, create new
+  echo "creating new deployment '$NAME'"
+  gcloud deployment-manager --project $PROJECT_ID deployments create $NAME --config "$CONFIG"
+else
+  # deployment already exists, update
+  echo "updating $NAME"
+  gcloud deployment-manager --project $PROJECT_ID deployments update $NAME --config "$CONFIG"
+fi
+
+echo "finished"
