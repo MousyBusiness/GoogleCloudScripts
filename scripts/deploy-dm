@@ -32,6 +32,12 @@ while [[ -n "$1" ]]; do
   --delete)
     DELETE=true
     ;;
+  --preview)
+    PREVIEW=true
+    ;;
+  --rebuild)
+    REBUILD=true
+    ;;
   esac
   shift
 done
@@ -39,26 +45,41 @@ done
 [[ -z "$PROJECT_ID" ]] && echo "require --project" && exit 1
 [[ -z "$NAME" ]] && echo "require --name" && exit 1
 
-if [[ "$DELETE" == "true" ]]; then
-  if ! gcloud deployment-manager deployments delete webscraper --quiet; then
-    echo "failed to delete deployment"
-    exit 1
-  fi
-  echo "successfully deleted"
-  exit 0
+if [[ "$DELETE" == "true" ]] || [[ "$REBUILD" == "true" ]]; then
+  gcloud deployment-manager deployments delete webscraper --quiet
+
+  [[ "$DELETE" == "true" ]] && echo "deleted" && exit 0
 fi
 
 [[ -z "$CONFIG" ]] && echo "require --config" && exit 1
+
+
+
+set -e
 
 # check if deployment exists or not
 if ! gcloud deployment-manager --project $PROJECT_ID deployments describe $NAME &>/dev/null; then
   # deployment doesnt exist, create new
   echo "creating new deployment '$NAME'"
-  gcloud deployment-manager --project $PROJECT_ID deployments create $NAME --config "$CONFIG"
+  cmd="gcloud deployment-manager --project $PROJECT_ID deployments create $NAME --config $CONFIG"
+  if [[ "$PREVIEW" == "true" ]] ; then
+    echo "running preview"
+    cmd="$(echo $cmd) --preview"
+  fi
+
+  eval $cmd
+
 else
   # deployment already exists, update
   echo "updating $NAME"
-  gcloud deployment-manager --project $PROJECT_ID deployments update $NAME --config "$CONFIG"
+  cmd="gcloud deployment-manager --project $PROJECT_ID deployments update $NAME --config $CONFIG"
+  if [[ "$PREVIEW" == "true" ]] ; then
+    echo "running preview"
+    cmd="$(echo $cmd) --preview"
+  fi
+
+  eval $cmd
+
 fi
 
-echo "finished"
+echo "success"

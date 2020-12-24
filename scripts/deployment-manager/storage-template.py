@@ -1,9 +1,11 @@
-"""Creates the Cloud Storage bucket for iot-ingestion."""
+"""Creates the Cloud Storage bucket."""
 
 
 def GenerateConfig(context):
+    name = context.env['name']
+    delete_after = context.properties['deleteAfter']
     resources = [{
-        'name': 'iot-ingestion-bucket',
+        'name': name,
         'type': 'gcp-types/storage-v1:buckets',
         'properties': {
             'location': 'europe-west2',
@@ -15,27 +17,8 @@ def GenerateConfig(context):
                             "type": "Delete"
                         },
                         "condition": {
-                            "age": 90,
-                            "isLive": True
-                        }
-                    }
-                ]
-            }
-        },
-    },{
-        'name': 'temporary-iot-ingestion-bucket',
-        'type': 'gcp-types/storage-v1:buckets',
-        'properties': {
-            'location': 'europe-west2',
-            'storageClass': 'STANDARD',
-            "lifecycle": {
-                "rule": [
-                    {
-                        "action": {
-                            "type": "Delete"
-                        },
-                        "condition": {
-                            "age": 30,
+                            "age": delete_after,
+                            # https://cloud.google.com/storage/docs/lifecycle#islive
                             "isLive": True
                         }
                     }

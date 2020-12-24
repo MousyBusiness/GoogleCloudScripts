@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+while [ -n "$1" ]; do
+    case $1 in
+    --mig)
+      MIG="$2"
+      shift
+      ;;
+    --instance)
+      INSTANCE="$2"
+      shift
+      ;;
+    --zone)
+      ZONE="$2"
+      shift
+      ;;
+    esac
+shift
+done
+
+[[ -z "$MIG" ]] && echo "error: require mig" && exit 1
+[[ -z "$INSTANCE" ]] && echo "error: require instance" && exit 1
+[[ -z "$ZONE" ]] && echo "error: require zone" && exit 1
+
+gcloud compute instance-groups managed delete-instances $MIG --instances=$INSTANCE --zone $ZONE
