@@ -38,6 +38,10 @@ while [[ -n "$1" ]]; do
   --rebuild)
     REBUILD=true
     ;;
+  --properties)
+    PROPERTIES="--properties $2"
+    shift
+    ;;
   esac
   shift
 done
@@ -46,14 +50,18 @@ done
 [[ -z "$NAME" ]] && echo "require --name" && exit 1
 
 if [[ "$DELETE" == "true" ]] || [[ "$REBUILD" == "true" ]]; then
-  gcloud deployment-manager deployments delete webscraper --quiet
+  gcloud deployment-manager deployments delete $NAME --quiet
 
   [[ "$DELETE" == "true" ]] && echo "deleted" && exit 0
 fi
 
 [[ -z "$CONFIG" ]] && echo "require --config" && exit 1
 
-
+if echo "$CONFIG" | grep -q -E "jinja|py$"; then
+  TEMPLATE_FLAG="--template"
+else
+  TEMPLATE_FLAG="--config"
+fi
 
 set -e
 
@@ -61,8 +69,8 @@ set -e
 if ! gcloud deployment-manager --project $PROJECT_ID deployments describe $NAME &>/dev/null; then
   # deployment doesnt exist, create new
   echo "creating new deployment '$NAME'"
-  cmd="gcloud deployment-manager --project $PROJECT_ID deployments create $NAME --config $CONFIG"
-  if [[ "$PREVIEW" == "true" ]] ; then
+  cmd="gcloud deployment-manager --project $PROJECT_ID deployments create $NAME $TEMPLATE_FLAG $CONFIG $PROPERTIES"
+  if [[ "$PREVIEW" == "true" ]]; then
     echo "running preview"
     cmd="$(echo $cmd) --preview"
   fi
@@ -72,8 +80,8 @@ if ! gcloud deployment-manager --project $PROJECT_ID deployments describe $NAME 
 else
   # deployment already exists, update
   echo "updating $NAME"
-  cmd="gcloud deployment-manager --project $PROJECT_ID deployments update $NAME --config $CONFIG"
-  if [[ "$PREVIEW" == "true" ]] ; then
+  cmd="gcloud deployment-manager --project $PROJECT_ID deployments update $NAME $TEMPLATE_FLAG $CONFIG $PROPERTIES"
+  if [[ "$PREVIEW" == "true" ]]; then
     echo "running preview"
     cmd="$(echo $cmd) --preview"
   fi

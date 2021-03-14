@@ -1,6 +1,0 @@
-options:
-  inputMappings:
-    - fieldName: Authorization
-      location: HEADER
-      value: >
-        $.concat("Bearer ", $.googleOauth2AccessToken())
