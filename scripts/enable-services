@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+PROJECT_ID=$1
+
 [[ -z "$PROJECT_ID" ]] && echo "error: require project id" && exit 1
 [[ -z "$SERVICES" ]] && echo "error: require project id" && exit 1
 
