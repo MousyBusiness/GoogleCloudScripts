@@ -2,8 +2,8 @@
 
 PROJECT_ID=$1
 
-[[ -z "$PROJECT_ID" ]] && echo "error: require project id" && exit 1
-[[ -z "$SERVICES" ]] && echo "error: require project id" && exit 1
+[[ -z "$PROJECT_ID" ]] && echo "error: require PROJECT_ID" && exit 1
+[[ -z "$SERVICES" ]] && echo "error: require SERVICES" && exit 1
 
 if ! gcloud projects list | awk '{ print $1 }' | grep -Eq "^${PROJECT_ID}$"; then
   echo "error: invalid project id" && exit 1
